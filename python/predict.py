@@ -59,7 +59,7 @@ predictions = Dense(2, activation="softmax")(x)
 # creating the final model 
 model_final = Model(input = model.input, output = predictions)
 
-model_finale.load_weights(weights_file_path)
+model_final.load_weights(weights_file_path)
 
 # compile the model 
 model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
