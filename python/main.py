@@ -18,6 +18,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import os, sys
 import time
+import numpy as np
 
 def train(model_final, config, model_section):
 
@@ -129,14 +130,14 @@ def predict(model_final, config, model_file_name):
 
     predictions = model_final.predict_generator(
         validation_generator,
-        20,
+        10000,
         verbose=1,
         workers=8,
         use_multiprocessing=False)
 
     print('Prediction done.')
     print(predictions[:10])
-    predictions.save(results_dir + '/' + model_file_name)
+    np.save(results_dir + '/' + model_file_name, predictions)
 
 def load_model(config, model_section=None, weights_file=None):
 
