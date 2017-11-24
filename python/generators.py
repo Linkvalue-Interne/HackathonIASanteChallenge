@@ -32,7 +32,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
     while 1:
         
         random.shuffle(all_images)
-        X = np.zeros((batch_size, target_size[0], target_size[1]))
+        X = np.zeros((batch_size, target_size[0], target_size[1], 1))
         Y = np.zeros((batch_size, 1, len(labels)))
         for i in range(batch_size):
             entry = all_images[i]
@@ -44,7 +44,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
             # if x.size != (target_size[0], target_size[1],3):
             #     resample = pil_image.NEAREST
             #     x = x.resize((target_size[0], target_size[1],3), resample)
-            x = scipy.misc.imresize(x, target_size)
+            x = np.expand_dims(scipy.misc.imresize(x, target_size), axis=2)
 
             x = x.astype('float32') / 255.
             X[i] = x
