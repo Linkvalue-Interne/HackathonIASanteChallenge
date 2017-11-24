@@ -24,9 +24,6 @@ def splitByClass(data):
 
 def splitTrainTest(splitData):
     split = np.zeros((2, len(splitData)), dtype=object)
-    benign = splitData[0]
-    malignant = splitData[1]
-
     for index, classType in enumerate(splitData):
         X_train, X_test = train_test_split(classType, test_size=0.20) #random_state=42
         split[0][index] =  X_train
