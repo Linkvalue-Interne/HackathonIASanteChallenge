@@ -34,34 +34,34 @@ def train(model_final, config, model_section):
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    train_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        horizontal_flip = True,
-        fill_mode = "nearest",
-        zoom_range = 0.3,
-        width_shift_range = 0.3,
-        height_shift_range=0.3,
-        rotation_range=180)
+    # train_datagen = ImageDataGenerator(
+    #     rescale = 1./255,
+    #     horizontal_flip = True,
+    #     fill_mode = "nearest",
+    #     zoom_range = 0.3,
+    #     width_shift_range = 0.3,
+    #     height_shift_range=0.3,
+    #     rotation_range=180)
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        fill_mode = "nearest")
+    # test_datagen = ImageDataGenerator(
+    #     rescale = 1./255,
+    #     fill_mode = "nearest")
 
-    train_generator = train_datagen.flow_from_directory(
-        train_data_dir,
-        target_size = (img_height, img_width),
-        batch_size = batch_size, 
-        class_mode = "categorical")
+    # train_generator = train_datagen.flow_from_directory(
+    #     train_data_dir,
+    #     target_size = (img_height, img_width),
+    #     batch_size = batch_size, 
+    #     class_mode = "categorical")
 
-    custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
-        batch_size=batch_size, target_size=(img_height, img_width))
+    # custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
+    #     batch_size=batch_size, target_size=(img_height, img_width))
+
+    # validation_generator = test_datagen.flow_from_directory(
+    #     validation_data_dir,
+    #     target_size = (img_height, img_width),
+    #     class_mode = "categorical")
 
     X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
-
-    validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
-        target_size = (img_height, img_width),
-        class_mode = "categorical")
 
     # prepare the tensorboard
     timestamp = time.time()
