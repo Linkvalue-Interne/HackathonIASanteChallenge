@@ -20,6 +20,12 @@ import os, sys
 import time
 
 def train(model_final, config, model_section):
+
+    img_width, img_height,\
+    batch_size, epochs, \
+    training_steps_per_epoch, validation_steps_per_epoch,\
+    positive_weight, model_name = get_metadata_model(config, model_section)
+
     #Read Basic Metadata from config file
     train_data_dir, validation_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
@@ -73,6 +79,11 @@ def train(model_final, config, model_section):
 
 def evaluate(model_final, config):
 
+    img_width, img_height,\
+    batch_size, epochs, \
+    training_steps_per_epoch, validation_steps_per_epoch,\
+    positive_weight, model_name = get_metadata_model(config, model_section)
+
     train_data_dir, validation_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
@@ -97,6 +108,11 @@ def evaluate(model_final, config):
 
 
 def predict(model_final, config, model_file_name):
+
+    img_width, img_height,\
+    batch_size, epochs, \
+    training_steps_per_epoch, validation_steps_per_epoch,\
+    positive_weight, model_name = get_metadata_model(config, model_section)
 
     train_data_dir, validation_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
@@ -123,25 +139,11 @@ def predict(model_final, config, model_file_name):
     predictions.save(results_dir + '/' + model_file_name)
 
 def load_model(config, model_section=None, weights_file=None):
-    
-    if model_section is not None:
-        try:
-            elements = config.items(model_section)
-        except configparser.NoSectionError:
-            print("Model %s not defined." % model_section)
-            print("See defined sections : %s" % config.items())
-            elements = config.items('default')
-    else:
-        elements = config.items('default')
 
     img_width, img_height,\
     batch_size, epochs, \
     training_steps_per_epoch, validation_steps_per_epoch,\
-    positive_weight, model_name = map(lambda x :
-                                             int(x[1]) if
-                                             x[1].isdigit()
-                                             else x[1],
-                                             elements)
+    positive_weight, model_name = get_metadata_model(config, model_section)
 
     model = pretrained_models.model_definition(model_name, (img_width, img_height, 3))
 
@@ -160,6 +162,22 @@ def load_model(config, model_section=None, weights_file=None):
     # compile the model 
     model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
     return model_final
+
+def get_metadata_model(config, model_section):
+    if model_section is not None:
+        try:
+            elements = config.items(model_section)
+        except configparser.NoSectionError:
+            print("Model %s not defined." % model_section)
+            print("See defined sections : %s" % config.items())
+            elements = config.items('default')
+    else:
+        elements = config.items('default')
+    
+    return map(lambda x : int(x[1]) if
+                         x[1].isdigit()
+                         else x[1],
+                         elements)
 
 if __name__ == "__main__":
 
