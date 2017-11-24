@@ -8,6 +8,8 @@ import PIL, PIL.Image
 from PIL import Image as pil_image
 import imageio
 
+import time
+
 from scipy.ndimage import imread
 from functools import partial
 
@@ -82,13 +84,15 @@ def load_set(path, target_size=(224,224)):
             all_images.append((label, image))
     random.shuffle(all_images)
     L = len(all_images)
-    L = 5000
+    # L = 5000
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
+    st = time.time()
     pool = Pool(12)
-    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images)
+    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[:L])
     pool.close() #we are not adding any more processes
     pool.join()
+    print('Images loaded in memory in %s' % (time.time()-st))
     for i, x in enumerate(X_list):
         X[i] = x
         Y[i] = labels_map[all_images[i][0]]
