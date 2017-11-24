@@ -99,7 +99,7 @@ def predict(model_final, config, model_file_name):
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    X_test, _, return_img_names = load_set(test_data_dir, target_size=(img_height, img_width), shuffle=False, return_img_names=True)
+    X_test, _, return_img_names = load_set(test_data_dir, target_size=(img_height, img_width), shuffle=False, return_img_name=True)
 
     predictions = model_final.predict(
         X_test,
