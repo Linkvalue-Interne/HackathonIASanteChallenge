@@ -9,6 +9,7 @@ from PIL import Image as pil_image
 import imageio
 
 from scipy.ndimage import imread
+from functools import partial
 
 from multiprocessing import Pool
 
@@ -57,8 +58,10 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
 
         yield (X, Y)
 
-def read_image(img_name, path, label ,target_size=(224,224)):
-    path = os.path.join(path, label, entry[1])
+def read_image(img, path=path ,target_size=(224,224)):
+    img_name = img[1]
+    label = img[0] 
+    path = os.path.join(path, label, img_name)
     x = imread(path)
     x = scipy.misc.imresize(x, target_size)
     x = x.astype('float32') / 255.
@@ -83,7 +86,7 @@ def load_set(path, target_size=(224,224)):
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
     pool = Pool(12)
-    X_list = pool.map(lambda img : read_image(img[1], path, img[0], target_size), all_images)
+    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images)
     pool.close() #we are not adding any more processes
     pool.join()
     for i, x in enumerate(X_list):
