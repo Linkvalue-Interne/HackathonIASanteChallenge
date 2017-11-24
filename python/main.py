@@ -9,6 +9,8 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard,
 
 import pretrained_models, custom_metrics
 
+from generators import generate_arrays_from_bottleneck_folder
+
 try:
     import configparser
 except ImportError: # Python 2.*
@@ -137,6 +139,13 @@ def predict(model_final, config, model_file_name):
     print('Prediction done.')
     print(predictions[:10])
     np.save(results_dir + '/' + model_file_name, predictions)
+
+def load_data(config):
+    train_data_dir, validation_data_dir, test_data_dir,\
+    results_dir, models_dir, log_dir = map(lambda x : x[1], 
+                                            config.items("base"))
+    x = np.array([np.array(Image.open(fname)) for fname in filelist])
+
 
 def load_model(config, model_section=None, weights_file=None):
 
