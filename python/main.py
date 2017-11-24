@@ -71,7 +71,7 @@ def train(model_final, config, model_section):
     # Save the model according to the conditions
     file_name = models_dir + '/' + model_section + ".h5"
     checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+    # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
 
     # Train the model 
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
@@ -93,7 +93,11 @@ def train(model_final, config, model_section):
         validation_split = 0.2,
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
-        callbacks = [tbCallBack, checkpoint, early])
+        callbacks = [
+            tbCallBack,
+            checkpoint,
+            # early
+            ])
 
 def evaluate(model_final, config):
 
