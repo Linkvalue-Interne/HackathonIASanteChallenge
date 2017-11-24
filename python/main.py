@@ -9,7 +9,7 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard,
 
 import pretrained_models, custom_metrics
 
-from generators import generate_arrays_from_bottleneck_folder
+from generators import generate_arrays_from_bottleneck_folder, load_set
 
 try:
     import configparser
@@ -56,6 +56,8 @@ def train(model_final, config, model_section):
     custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
         batch_size=batch_size, target_size=(img_height, img_width))
 
+    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
+
     validation_generator = test_datagen.flow_from_directory(
         validation_data_dir,
         target_size = (img_height, img_width),
@@ -73,12 +75,22 @@ def train(model_final, config, model_section):
 
     # Train the model 
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
-    model_final.fit_generator(
-        custom_train_generator,
-        steps_per_epoch = training_steps_per_epoch,
+    # model_final.fit_generator(
+    #     custom_train_generator,
+    #     steps_per_epoch = training_steps_per_epoch,
+    #     epochs = epochs,
+    #     validation_data = validation_generator,
+    #     validation_steps = validation_steps_per_epoch,
+    #     verbose=1,
+    #     class_weight = {0 : 1., 1 : positive_weight},
+    #     callbacks = [tbCallBack, checkpoint, early])
+
+    model_final.fit(
+        X_train,
+        Y_train,
+        batch_size = batch_size,
         epochs = epochs,
-        validation_data = validation_generator,
-        validation_steps = validation_steps_per_epoch,
+        validation_split = 0.8,
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [tbCallBack, checkpoint, early])
