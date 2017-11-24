@@ -113,7 +113,7 @@ def predict(model_final, config, model_file_name):
 
     predictions = model_final.predict_generator(
         validation_generator,
-        0,
+        20,
         verbose=1,
         workers=8,
         use_multiprocessing=False)
