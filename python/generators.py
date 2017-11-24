@@ -86,7 +86,7 @@ def load_set(path, target_size=(224,224)):
     L = len(all_images)
     # L = 5000
     X = np.zeros((L, target_size[0], target_size[1], 3))
-    Y = np.zeros((L, 1, len(labels)))
+    Y = np.zeros((L, len(labels)))
     st = time.time()
     pool = Pool(12)
     X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[:L])
@@ -95,7 +95,7 @@ def load_set(path, target_size=(224,224)):
     print('Images loaded in memory in %s sec' % (int(time.time()-st)))
     for i, x in enumerate(X_list):
         X[i] = x
-        Y[i, 0, labels_map[all_images[i][0]]] = 1.
+        Y[i, labels_map[all_images[i][0]]] = 1.
 
     return X, Y
 # gen = generate_arrays_from_bottleneck_folder('/sharedfiles/challenge_data/data/train', batch_size=32, target_size=(224,224))
