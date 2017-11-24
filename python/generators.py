@@ -86,7 +86,7 @@ def load_set(path, target_size=(224,224)):
     X_list = pool.map(read_image, all_images)
     pool.close() #we are not adding any more processes
     pool.join()
-    for i, x is enumerate(X_list):
+    for i, x in enumerate(X_list):
         X[i] = x
         Y[i] = labels_map[all_images[i][0]]
 
