@@ -98,11 +98,11 @@ def evaluate(model_final, config):
         target_size = (img_height, img_width),
         class_mode = "categorical")
 
-    print model_final.evaluate_generator(
+    print(model_final.evaluate_generator(
         validation_generator,
         10000,
         workers=8,
-        use_multiprocessing=False)
+        use_multiprocessing=False))
 
     print('Evaluation done.')
 
