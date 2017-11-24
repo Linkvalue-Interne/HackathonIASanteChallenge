@@ -42,7 +42,7 @@ def makeSymLinks(_splitData, _pathFrom, _pathTo):
         for index2, images in enumerate(list(split)):
             path_part_2 = 'benign/' if index2 == 0 else 'malignant/'
             for image in images:
-                source = _pathFrom + path_part_2 + image[0]
+                source = _pathFrom + image[0]
                 target = _pathTo + path_part_1 + path_part_2 + image[0]
                 try:
                     if (os.path.isfile(target)):
@@ -51,8 +51,7 @@ def makeSymLinks(_splitData, _pathFrom, _pathTo):
                     os.symlink(source, target)
                     print(source, ' -> ', target)
                 except:
-                    print('could not create symlink for ', source)
-
+                    print('could not create symlink for ', source, sys.exc_info()[0])
 
 def run(csv, sourcePath, targetPath):
     data = readCsvFile(csv)
