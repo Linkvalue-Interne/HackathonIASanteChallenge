@@ -57,7 +57,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
 
         yield (X, Y)
 
-def read_image(entry,target_size=(224,224)):
+def read_image(img_name, path, label ,target_size=(224,224)):
     path = os.path.join(path, label, entry[1])
     x = imread(path)
     x = scipy.misc.imresize(x, target_size)
@@ -83,7 +83,7 @@ def load_set(path, target_size=(224,224)):
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
     pool = Pool(12)
-    X_list = pool.map(read_image, all_images)
+    X_list = pool.map(lambda img : read_image(img[1], path, img[0], target_size), all_images)
     pool.close() #we are not adding any more processes
     pool.join()
     for i, x in enumerate(X_list):
