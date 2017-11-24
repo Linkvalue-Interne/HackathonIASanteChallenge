@@ -100,10 +100,10 @@ def evaluate(model_final, config):
 
     model_final.evaluate_generator(
         validation_generator,
-        10000,
+        10,
         verbose=1,
         workers=8,
-        use_multiprocessing=True)
+        use_multiprocessing=False)
 
     print('Evaluation done.')
 
@@ -130,10 +130,10 @@ def predict(model_final, config, model_file_name):
 
     predictions = model_final.predict_generator(
         validation_generator,
-        10000,
+        10,
         verbose=1,
         workers=8,
-        use_multiprocessing=True)
+        use_multiprocessing=False)
 
     print('Prediction done.')
     print(predictions[:10])
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     elif mode == 'predict':
         predict(model_final, config, model_section)
     elif mode == 'evaluate':
-        evaluate(model_final, config, model_section)
+        evaluate(model_final, config)
     else:
         print('unknown mode.')
 
