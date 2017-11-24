@@ -53,6 +53,9 @@ def train(model_final, config, model_section):
         batch_size = batch_size, 
         class_mode = "categorical")
 
+    custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
+        batch_size=batch_size, target_size=(img_height, img_width))
+
     validation_generator = test_datagen.flow_from_directory(
         validation_data_dir,
         target_size = (img_height, img_width),
@@ -71,7 +74,7 @@ def train(model_final, config, model_section):
     # Train the model 
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
     model_final.fit_generator(
-        train_generator,
+        custom_train_generator,
         steps_per_epoch = training_steps_per_epoch,
         epochs = epochs,
         validation_data = validation_generator,
