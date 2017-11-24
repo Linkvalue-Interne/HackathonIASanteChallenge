@@ -107,7 +107,7 @@ def predict(model_final, config, model_file_name):
     print('Prediction done.')
     print(predictions[:10])
     preds = pd.DataFrame({'name' : return_img_names, 'risk' : predictions[:,1]})
-    preds.to_csv('%s/%s_%d.csv' % (results_dir, model_file_name, int(time.time())))
+    preds.to_csv('%s/%s_%d.csv' % (results_dir, model_file_name, int(time.time())), index=False)
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
