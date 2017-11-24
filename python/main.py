@@ -21,6 +21,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 import os, sys
 import time
 import numpy as np
+import pandas as pd
 
 def train(model_final, config, model_section):
 
@@ -34,34 +35,9 @@ def train(model_final, config, model_section):
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    # train_datagen = ImageDataGenerator(
-    #     rescale = 1./255,
-    #     horizontal_flip = True,
-    #     fill_mode = "nearest",
-    #     zoom_range = 0.3,
-    #     width_shift_range = 0.3,
-    #     height_shift_range=0.3,
-    #     rotation_range=180)
-
-    # test_datagen = ImageDataGenerator(
-    #     rescale = 1./255,
-    #     fill_mode = "nearest")
-
-    # train_generator = train_datagen.flow_from_directory(
-    #     train_data_dir,
-    #     target_size = (img_height, img_width),
-    #     batch_size = batch_size, 
-    #     class_mode = "categorical")
-
-    # custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
-    #     batch_size=batch_size, target_size=(img_height, img_width))
-
-    # validation_generator = test_datagen.flow_from_directory(
-    #     validation_data_dir,
-    #     target_size = (img_height, img_width),
-    #     class_mode = "categorical")
-
     X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
+
+    X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
     # prepare the tensorboard
     timestamp = time.time()
@@ -75,22 +51,13 @@ def train(model_final, config, model_section):
 
     # Train the model 
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
-    # model_final.fit_generator(
-    #     custom_train_generator,
-    #     steps_per_epoch = training_steps_per_epoch,
-    #     epochs = epochs,
-    #     validation_data = validation_generator,
-    #     validation_steps = validation_steps_per_epoch,
-    #     verbose=1,
-    #     class_weight = {0 : 1., 1 : positive_weight},
-    #     callbacks = [tbCallBack, checkpoint, early])
 
     model_final.fit(
         X_train,
         Y_train,
         batch_size = batch_size,
         epochs = epochs,
-        validation_split = 0.2,
+        validation_data = (X_val, Y_val),
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [
@@ -110,20 +77,13 @@ def evaluate(model_final, config):
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        fill_mode = "nearest")
+    X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
-    validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
-        target_size = (img_height, img_width),
-        class_mode = "categorical")
-
-    print(model_final.evaluate_generator(
-        validation_generator,
-        10000,
-        workers=8,
-        use_multiprocessing=False))
+    print(model_final.evaluate(
+        X_val,
+        Y_val,
+        batch_size=batch_size,
+        verbose=1))
 
     print('Evaluation done.')
 
@@ -139,25 +99,17 @@ def predict(model_final, config, model_file_name):
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        fill_mode = "nearest")
+    X_test, _, return_img_names = load_set(test_data_dir, target_size=(img_height, img_width), shuffle=False, return_img_name=True)
 
-    validation_generator = test_datagen.flow_from_directory(
-        test_data_dir,
-        target_size = (img_height, img_width),
-        class_mode = "categorical")
-
-    predictions = model_final.predict_generator(
-        validation_generator,
-        10000,
-        verbose=1,
-        workers=8,
-        use_multiprocessing=False)
-
+    predictions = model_final.predict(
+        X_test,
+        batch_size=batch_size,
+        verbose=1
+    )
     print('Prediction done.')
     print(predictions[:10])
-    np.save(results_dir + '/' + model_file_name, predictions)
+    preds = pd.DataFrame({'name' : return_img_names, 'risk' : predictions[:,1]})
+    preds.to_csv('%s/%s_%d.csv' % (results_dir, model_file_name, int(time.time())), index=False)
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
