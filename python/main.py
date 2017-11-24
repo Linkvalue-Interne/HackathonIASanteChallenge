@@ -155,7 +155,7 @@ def load_model(config, model_section=None, weights_file=None):
     model_final = Model(input = model.input, output = predictions)
 
     if weights_file is not None:
-        model_final.load_weights(weights_file_path)
+        model_final.load_weights(weights_file)
 
     # compile the model 
     model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
