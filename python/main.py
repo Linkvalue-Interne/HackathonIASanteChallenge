@@ -178,9 +178,9 @@ def load_model(config, model_section=None, weights_file=None):
     #Adding custom Layers 
     x = model.output
     x = Flatten()(x)
-    x = Dense(256, activation="relu")(x)
+    x = Dense(1024, activation="relu")(x)
     x = Dropout(0.5)(x)
-    x = Dense(256, activation="relu")(x)
+    x = Dense(1024, activation="relu")(x)
     predictions = Dense(2, activation="softmax")(x)
 
     # creating the final model 
