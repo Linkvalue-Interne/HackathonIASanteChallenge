@@ -2,10 +2,11 @@
 from keras import applications
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
-from keras.models import Sequential, Model 
+from keras.models import Sequential, Model
 from keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
-from keras import backend as k 
+from keras import backend as k
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
+from keras.utils.training_utils import multi_gpu_model
 
 import pretrained_models, custom_metrics
 
@@ -14,7 +15,7 @@ from generators import generate_arrays_from_bottleneck_folder, load_set
 try:
     import configparser
 except ImportError: # Python 2.*
-    import ConfigParser as configparser 
+    import ConfigParser as configparser
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -22,6 +23,14 @@ import os, sys
 import time
 import numpy as np
 import pandas as pd
+
+import tensorflow as tf
+from tensorflow.python.client import device_lib
+
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return len([x for x in local_device_protos if x.device_type == 'GPU'])
+
 
 def train(model_final, config, model_section):
 
@@ -32,7 +41,7 @@ def train(model_final, config, model_section):
 
     #Read Basic Metadata from config file
     train_data_dir, validation_data_dir, test_data_dir,\
-    results_dir, models_dir, log_dir = map(lambda x : x[1], 
+    results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
     X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
@@ -49,7 +58,7 @@ def train(model_final, config, model_section):
     checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
     # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
 
-    # Train the model 
+    # Train the model
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
 
     model_final.fit(
@@ -74,7 +83,7 @@ def evaluate(model_final, config):
     positive_weight, model_name = get_metadata_model(config, model_section)
 
     train_data_dir, validation_data_dir, test_data_dir,\
-    results_dir, models_dir, log_dir = map(lambda x : x[1], 
+    results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
     X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
@@ -96,7 +105,7 @@ def predict(model_final, config, model_file_name):
     positive_weight, model_name = get_metadata_model(config, model_section)
 
     train_data_dir, validation_data_dir, test_data_dir,\
-    results_dir, models_dir, log_dir = map(lambda x : x[1], 
+    results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
     X_test, _, return_img_names = load_set(test_data_dir, target_size=(img_height, img_width), shuffle=False, return_img_name=True)
@@ -113,7 +122,7 @@ def predict(model_final, config, model_file_name):
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
-    results_dir, models_dir, log_dir = map(lambda x : x[1], 
+    results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
     x = np.array([np.array(Image.open(fname)) for fname in filelist])
 
@@ -127,7 +136,7 @@ def load_model(config, model_section=None, weights_file=None):
 
     model = pretrained_models.model_definition(model_name, (img_width, img_height, 3))
 
-    #Adding custom Layers 
+    #Adding custom Layers
     x = model.output
     x = Flatten()(x)
     x = Dense(1024, activation="relu")(x)
@@ -135,13 +144,13 @@ def load_model(config, model_section=None, weights_file=None):
     x = Dense(1024, activation="relu")(x)
     predictions = Dense(2, activation="softmax")(x)
 
-    # creating the final model 
+    # creating the final model
     model_final = Model(input = model.input, output = predictions)
 
     if weights_file is not None:
         model_final.load_weights(weights_file)
 
-    # compile the model 
+    # compile the model
     model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
     return model_final
 
@@ -155,7 +164,7 @@ def get_metadata_model(config, model_section):
             elements = config.items('default')
     else:
         elements = config.items('default')
-    
+
     return map(lambda x : int(x[1]) if
                          x[1].isdigit()
                          else x[1],
@@ -178,8 +187,16 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('config.ini')
 
+    # Get number of GPUs
+    number_gpus = get_available_gpus()
+
+
     # Load model
-    model_final = load_model(config, model_section=model_section, weights_file=weights_file)
+    with tf.device('/cpu:0'):
+        model_final = load_model(config, model_section=model_section, weights_file=weights_file)
+
+    if (number_gpus > 1):
+        model_final = multi_gpu_model(model_final, gpus=number_gpus)
 
     if mode == 'train':
         train(model_final, config, model_section)
@@ -189,4 +206,3 @@ if __name__ == "__main__":
         evaluate(model_final, config)
     else:
         print('unknown mode.')
-
