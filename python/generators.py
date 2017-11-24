@@ -47,7 +47,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
             #     resample = pil_image.NEAREST
             #     x = x.resize((target_size[0], target_size[1],3), resample)
             x = scipy.misc.imresize(x, target_size)
-            x = np.expand_dims(x, axis=2)
+            # x = np.expand_dims(x, axis=2)
             x = x.astype('float32') / 255.
             X[i] = x
 #            X[i] = x[:target_size[0], :target_size[1], 3]
