@@ -37,6 +37,8 @@ def train(model_final, config, model_section):
 
     X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
 
+    X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
+
     # prepare the tensorboard
     timestamp = time.time()
     tbCallBack = TensorBoard(log_dir=log_dir + '/' + model_name + '/' + str(int(timestamp)), histogram_freq=0,
@@ -55,7 +57,7 @@ def train(model_final, config, model_section):
         Y_train,
         batch_size = batch_size,
         epochs = epochs,
-        validation_split = 0.2,
+        validation_data = (X_val, Y_val),
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [
@@ -75,13 +77,13 @@ def evaluate(model_final, config):
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    X_eval, Y_eval = load_set(train_data_dir, target_size=(img_height, img_width), sample=0.2)
+    X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
-    print(model_final.evaluate_generator(
-        validation_generator,
-        10000,
-        workers=8,
-        use_multiprocessing=False))
+    print(model_final.evaluate(
+        X_val,
+        Y_val,
+        batch_size=batch_size,
+        verbose=1))
 
     print('Evaluation done.')
 
