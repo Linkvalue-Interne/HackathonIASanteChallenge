@@ -28,7 +28,7 @@ def train(model_final, config, model_section):
     positive_weight, model_name = get_metadata_model(config, model_section)
 
     #Read Basic Metadata from config file
-    train_data_dir, validation_data_dir,\
+    train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
@@ -85,7 +85,7 @@ def evaluate(model_final, config):
     training_steps_per_epoch, validation_steps_per_epoch,\
     positive_weight, model_name = get_metadata_model(config, model_section)
 
-    train_data_dir, validation_data_dir,\
+    train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
@@ -98,9 +98,9 @@ def evaluate(model_final, config):
         target_size = (img_height, img_width),
         class_mode = "categorical")
 
-    model_final.evaluate_generator(
+    print model_final.evaluate_generator(
         validation_generator,
-        10,
+        10000,
         workers=8,
         use_multiprocessing=False)
 
@@ -114,7 +114,7 @@ def predict(model_final, config, model_file_name):
     training_steps_per_epoch, validation_steps_per_epoch,\
     positive_weight, model_name = get_metadata_model(config, model_section)
 
-    train_data_dir, validation_data_dir,\
+    train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
@@ -123,13 +123,13 @@ def predict(model_final, config, model_file_name):
         fill_mode = "nearest")
 
     validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
+        test_data_dir,
         target_size = (img_height, img_width),
         class_mode = "categorical")
 
     predictions = model_final.predict_generator(
         validation_generator,
-        10,
+        10000,
         verbose=1,
         workers=8,
         use_multiprocessing=False)
