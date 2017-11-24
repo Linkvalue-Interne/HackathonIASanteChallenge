@@ -90,7 +90,7 @@ def train(model_final, config, model_section):
         Y_train,
         batch_size = batch_size,
         epochs = epochs,
-        validation_split = 0.8,
+        validation_split = 0.2,
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [tbCallBack, checkpoint, early])

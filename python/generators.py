@@ -27,7 +27,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
     
     labels_map = {}
     for i, label in enumerate(labels):
-        labels_map[label] = i
+        labels_map[label] = float(i)
     all_images = []
     
     for i, label in enumerate(labels):
@@ -92,7 +92,7 @@ def load_set(path, target_size=(224,224)):
     X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[:L])
     pool.close() #we are not adding any more processes
     pool.join()
-    print('Images loaded in memory in %s' % (time.time()-st))
+    print('Images loaded in memory in %s sec' % (int(time.time()-st)))
     for i, x in enumerate(X_list):
         X[i] = x
         Y[i] = labels_map[all_images[i][0]]
