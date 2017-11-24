@@ -10,6 +10,7 @@ from skimage.filters import gaussian
 from skimage.transform import rescale, resize
 from os import listdir, path, makedirs
 from multiprocessing import Pool
+from skimage.transform import rotate
 
 parser = argparse.ArgumentParser(description="Preprocess image by region interest")
 
@@ -22,6 +23,7 @@ parser.add_argument("pool_size", type=int, help="pool size")
 args = parser.parse_args()
 
 def process_folder(fname):
+    fname,ext = fname.split(".")
     def raw_seg(im) :
         im_grayscale = color.rgb2gray(im)
         im_red = im_grayscale - np.min(im_grayscale)
@@ -71,14 +73,33 @@ def process_folder(fname):
             im_crop = im_rescaled[:,crop_size:-crop_size,:]
         
         return resize(im_crop, (size,size,d))
+
+    rot_angles = [0,90,180,270]
+    def geometrical_augmentation(im):
+        imgs = [im, im[:,::-1,::]]
+        imgs_fin = []
+        for angle in rot_angles :
+            imgs_fin += map(lambda x : rotate(x, angle, mode='reflect'), imgs)
+
+        return imgs_fin
+
+    def normalize(im):
+        im_sub_mean = im - im.mean(axis=(0,1))
+        im_sub = im_sub_mean - np.min(im_sub_mean)
+        im_norm = im_sub/np.amax(im_sub)
+        return im_norm
     
-    im = im_resize(io.imread(args.input_folder + "/" + fname), 500)
+    im = im_resize(
+        normalize(io.imread(args.input_folder + "/" + fname + "." + ext)), 500
+    )
     label = raw_seg(im)
     mask = find_bbox(label, im)
-    io.imsave(
-        args.output_folder + "/" + fname,
-        resize(mask,(args.im_size, args.im_size,3))
-    )
+    mask_augmented = geometrical_augmentation(mask)
+    for i,m in enumerate(mask_augmented): 
+        io.imsave(
+            args.output_folder + "/" + fname + "_" + str(i) +"." + ext,
+            resize(m,(args.im_size, args.im_size,3))
+        )
 
 pool = Pool(args.pool_size)
 if not path.exists(args.output_folder):
