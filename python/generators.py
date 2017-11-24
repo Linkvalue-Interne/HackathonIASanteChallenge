@@ -10,6 +10,8 @@ import imageio
 
 from scipy.ndimage import imread
 
+from multiprocessing import Pool
+
 def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224,224)):
     '''
     Generator that reads the precomputed weights from the files
@@ -55,6 +57,13 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
 
         yield (X, Y)
 
+def read_image(entry,target_size=(224,224)):
+    path = os.path.join(path, label, entry[1])
+    x = imread(path)
+    x = scipy.misc.imresize(x, target_size)
+    x = x.astype('float32') / 255.
+    return x
+
 def load_set(path, target_size=(224,224)):
     labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     labels.sort()
@@ -73,26 +82,13 @@ def load_set(path, target_size=(224,224)):
     L = 5000
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
-    for i in range(L):
-        if np.mod(i,100)==0:
-            print(i)
-        entry = all_images[i]
-        label = entry[0]
-        image = entry[1]
-        
-        x = imread(os.path.join(path, label, image),
-            # flatten=True, mode='RGB'
-            )
-        # print(x.size)
-        # if x.size != (target_size[0], target_size[1],3):
-        #     resample = pil_image.NEAREST
-        #     x = x.resize((target_size[0], target_size[1],3), resample)
-        x = scipy.misc.imresize(x, target_size)
-        # x = np.expand_dims(x, axis=2)
-        x = x.astype('float32') / 255.
+    pool = Pool(12)
+    X_list = pool.map(read_image, all_images)
+    pool.close() #we are not adding any more processes
+    pool.join()
+    for i, x is enumerate(X_list):
         X[i] = x
-#            X[i] = x[:target_size[0], :target_size[1], 3]
-        Y[i] = labels_map[label]
+        Y[i] = labels_map[all_images[i][0]]
 
     return X, Y
 # gen = generate_arrays_from_bottleneck_folder('/sharedfiles/challenge_data/data/train', batch_size=32, target_size=(224,224))
