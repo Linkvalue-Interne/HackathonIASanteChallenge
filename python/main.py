@@ -150,8 +150,6 @@ def load_model(config, model_section=None, weights_file=None):
     if weights_file is not None:
         model_final.load_weights(weights_file)
 
-    # compile the model
-    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
     return model_final
 
 def get_metadata_model(config, model_section):
@@ -197,6 +195,9 @@ if __name__ == "__main__":
 
     if (number_gpus > 1):
         model_final = multi_gpu_model(model_final, gpus=number_gpus)
+
+    # compile the model
+    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
 
     if mode == 'train':
         train(model_final, config, model_section)
