@@ -9,6 +9,8 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard,
 
 import pretrained_models, custom_metrics
 
+from generators import generate_arrays_from_bottleneck_folder, load_set
+
 try:
     import configparser
 except ImportError: # Python 2.*
@@ -28,33 +30,38 @@ def train(model_final, config, model_section):
     positive_weight, model_name = get_metadata_model(config, model_section)
 
     #Read Basic Metadata from config file
-    train_data_dir, validation_data_dir,\
+    train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
-    train_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        horizontal_flip = True,
-        fill_mode = "nearest",
-        zoom_range = 0.3,
-        width_shift_range = 0.3,
-        height_shift_range=0.3,
-        rotation_range=180)
+    # train_datagen = ImageDataGenerator(
+    #     rescale = 1./255,
+    #     horizontal_flip = True,
+    #     fill_mode = "nearest",
+    #     zoom_range = 0.3,
+    #     width_shift_range = 0.3,
+    #     height_shift_range=0.3,
+    #     rotation_range=180)
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        fill_mode = "nearest")
+    # test_datagen = ImageDataGenerator(
+    #     rescale = 1./255,
+    #     fill_mode = "nearest")
 
-    train_generator = train_datagen.flow_from_directory(
-        train_data_dir,
-        target_size = (img_height, img_width),
-        batch_size = batch_size, 
-        class_mode = "categorical")
+    # train_generator = train_datagen.flow_from_directory(
+    #     train_data_dir,
+    #     target_size = (img_height, img_width),
+    #     batch_size = batch_size, 
+    #     class_mode = "categorical")
 
-    validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
-        target_size = (img_height, img_width),
-        class_mode = "categorical")
+    # custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
+    #     batch_size=batch_size, target_size=(img_height, img_width))
+
+    # validation_generator = test_datagen.flow_from_directory(
+    #     validation_data_dir,
+    #     target_size = (img_height, img_width),
+    #     class_mode = "categorical")
+
+    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
 
     # prepare the tensorboard
     timestamp = time.time()
@@ -68,12 +75,22 @@ def train(model_final, config, model_section):
 
     # Train the model 
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
-    model_final.fit_generator(
-        train_generator,
-        steps_per_epoch = training_steps_per_epoch,
+    # model_final.fit_generator(
+    #     custom_train_generator,
+    #     steps_per_epoch = training_steps_per_epoch,
+    #     epochs = epochs,
+    #     validation_data = validation_generator,
+    #     validation_steps = validation_steps_per_epoch,
+    #     verbose=1,
+    #     class_weight = {0 : 1., 1 : positive_weight},
+    #     callbacks = [tbCallBack, checkpoint, early])
+
+    model_final.fit(
+        X_train,
+        Y_train,
+        batch_size = batch_size,
         epochs = epochs,
-        validation_data = validation_generator,
-        validation_steps = validation_steps_per_epoch,
+        validation_split = 0.8,
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [tbCallBack, checkpoint, early])
@@ -85,7 +102,7 @@ def evaluate(model_final, config):
     training_steps_per_epoch, validation_steps_per_epoch,\
     positive_weight, model_name = get_metadata_model(config, model_section)
 
-    train_data_dir, validation_data_dir,\
+    train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
@@ -98,12 +115,11 @@ def evaluate(model_final, config):
         target_size = (img_height, img_width),
         class_mode = "categorical")
 
-    model_final.evaluate_generator(
+    print(model_final.evaluate_generator(
         validation_generator,
-        50,
-        verbose=1,
+        10000,
         workers=8,
-        use_multiprocessing=False)
+        use_multiprocessing=False))
 
     print('Evaluation done.')
 
@@ -115,7 +131,7 @@ def predict(model_final, config, model_file_name):
     training_steps_per_epoch, validation_steps_per_epoch,\
     positive_weight, model_name = get_metadata_model(config, model_section)
 
-    train_data_dir, validation_data_dir,\
+    train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1], 
                                             config.items("base"))
 
@@ -124,7 +140,7 @@ def predict(model_final, config, model_file_name):
         fill_mode = "nearest")
 
     validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
+        test_data_dir,
         target_size = (img_height, img_width),
         class_mode = "categorical")
 
@@ -138,6 +154,13 @@ def predict(model_final, config, model_file_name):
     print('Prediction done.')
     print(predictions[:10])
     np.save(results_dir + '/' + model_file_name, predictions)
+
+def load_data(config):
+    train_data_dir, validation_data_dir, test_data_dir,\
+    results_dir, models_dir, log_dir = map(lambda x : x[1], 
+                                            config.items("base"))
+    x = np.array([np.array(Image.open(fname)) for fname in filelist])
+
 
 def load_model(config, model_section=None, weights_file=None):
 
@@ -207,7 +230,7 @@ if __name__ == "__main__":
     elif mode == 'predict':
         predict(model_final, config, model_section)
     elif mode == 'evaluate':
-        evaluate(model_final, config, model_section)
+        evaluate(model_final, config)
     else:
         print('unknown mode.')
 
