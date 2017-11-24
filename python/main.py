@@ -1,4 +1,4 @@
-from keras import applications
+from keras import applications, regularizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.models import Sequential, Model
@@ -137,9 +137,13 @@ def load_model(config, model_section=None, weights_file=None):
     #Adding custom Layers
     x = model.output
     x = Flatten()(x)
-    x = Dense(1024, activation="relu")(x)
+    x = Dense(1024, activation="relu",
+            kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     x = Dropout(0.5)(x)
-    x = Dense(1024, activation="relu")(x)
+    x = Dense(1024, activation="relu",
+        kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     predictions = Dense(2, activation="softmax")(x)
 
     # creating the final model
