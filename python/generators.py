@@ -58,7 +58,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
 
         yield (X, Y)
 
-def read_image(img, path=path ,target_size=(224,224)):
+def read_image(img, path='' ,target_size=(224,224)):
     img_name = img[1]
     label = img[0] 
     path = os.path.join(path, label, img_name)
