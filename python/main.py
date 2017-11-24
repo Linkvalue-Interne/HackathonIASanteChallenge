@@ -100,10 +100,10 @@ def evaluate(model_final, config):
 
     model_final.evaluate_generator(
         validation_generator,
-        50,
+        10000,
         verbose=1,
         workers=8,
-        use_multiprocessing=False)
+        use_multiprocessing=True)
 
     print('Evaluation done.')
 
@@ -133,7 +133,7 @@ def predict(model_final, config, model_file_name):
         10000,
         verbose=1,
         workers=8,
-        use_multiprocessing=False)
+        use_multiprocessing=True)
 
     print('Prediction done.')
     print(predictions[:10])
