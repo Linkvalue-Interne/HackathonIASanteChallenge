@@ -60,7 +60,7 @@ def train(model_final, config, model_section):
     early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
 
     # Train the model 
-    print 'Training model %s and saving snapshot at %s' %(model_section, file_name)
+    print('Training model %s and saving snapshot at %s' %(model_section, file_name))
     model_final.fit_generator(
         train_generator,
         steps_per_epoch = training_steps_per_epoch,
@@ -93,7 +93,7 @@ def evaluate(model_final, config):
         workers=8,
         use_multiprocessing=False)
 
-    print 'Evaluation done.'
+    print('Evaluation done.')
 
 
 def predict(model_final, config, model_file_name):
@@ -118,8 +118,8 @@ def predict(model_final, config, model_file_name):
         workers=8,
         use_multiprocessing=False)
 
-    print 'Prediction done.'
-    print predictions[:10]
+    print('Prediction done.')
+    print(predictions[:10])
     predictions.save(results_dir + '/' + model_file_name)
 
 def load_model(config, model_section=None, weights_file=None):
@@ -188,5 +188,5 @@ if __name__ == "__main__":
     elif mode == 'evaluate':
         evaluate(model_final, config, model_section)
     else:
-        print 'unknown mode.'
+        print('unknown mode.')
 
