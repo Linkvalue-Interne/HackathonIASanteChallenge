@@ -75,7 +75,7 @@ def load_set(path, target_size=(224,224)):
     Y = np.zeros((L, len(labels)))
     for i in range(L):
     	if np.mod(i,100)==0:
-    		print i
+    		print(i)
         entry = all_images[i]
         label = entry[0]
         image = entry[1]
