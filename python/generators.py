@@ -40,8 +40,8 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
             image = entry[1]
             
             x = imread(os.path.join(path, label, image),
-            	# flatten=True, mode='RGB'
-            	)
+                # flatten=True, mode='RGB'
+                )
             # print(x.size)
             # if x.size != (target_size[0], target_size[1],3):
             #     resample = pil_image.NEAREST
@@ -56,7 +56,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
         yield (X, Y)
 
 def load_set(path, target_size=(224,224)):
-	labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+    labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     labels.sort()
     
     labels_map = {}
@@ -79,8 +79,8 @@ def load_set(path, target_size=(224,224)):
         image = entry[1]
         
         x = imread(os.path.join(path, label, image),
-        	# flatten=True, mode='RGB'
-        	)
+            # flatten=True, mode='RGB'
+            )
         # print(x.size)
         # if x.size != (target_size[0], target_size[1],3):
         #     resample = pil_image.NEAREST
