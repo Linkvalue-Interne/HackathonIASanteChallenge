@@ -77,6 +77,7 @@ def load_set(path, target_size=(224,224), shuffle=True, return_img_name=False):
     if shuffle:
         random.shuffle(all_images)
     L = len(all_images)
+    print('Reading %s images' % L)
     # L = 5000
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
