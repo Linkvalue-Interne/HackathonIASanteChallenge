@@ -101,7 +101,6 @@ def evaluate(model_final, config):
     model_final.evaluate_generator(
         validation_generator,
         10,
-        verbose=1,
         workers=8,
         use_multiprocessing=False)
 
