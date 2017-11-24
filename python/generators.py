@@ -33,7 +33,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
         
         random.shuffle(all_images)
         X = np.zeros((batch_size, target_size[0], target_size[1], 3))
-        Y = np.zeros((batch_size, 1, len(labels)))
+        Y = np.zeros((batch_size, len(labels)))
         for i in range(batch_size):
             entry = all_images[i]
             label = entry[0]
@@ -51,9 +51,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
             x = x.astype('float32') / 255.
             X[i] = x
 #            X[i] = x[:target_size[0], :target_size[1], 3]
-            y = np.zeros((1, len(labels)))
-            y[0, labels_map[label]] = 1
-            Y[i] = y
+            Y[i] = labels_map[label]
 
         yield (X, Y)
 
