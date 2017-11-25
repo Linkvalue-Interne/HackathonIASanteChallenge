@@ -43,9 +43,9 @@ class Metrics(keras.callbacks.Callback):
         score = np.asarray(self.model.predict(self.validation_data[0]))
         predict = np.round(np.asarray(self.model.predict(self.validation_data[0])))[:,1]
         targ = self.validation_data[1]
-        print targ.shape
-        print predict.shape
-        print score.shape
+        print(targ.shape)
+        print(predict.shape)
+        print(score.shape)
 
         self.auc.append(sklm.roc_auc_score(targ, score))
         self.confusion.append(sklm.confusion_matrix(targ, predict))
