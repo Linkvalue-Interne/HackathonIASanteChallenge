@@ -46,6 +46,8 @@ class Metrics(keras.callbacks.Callback):
         targ_all = self.validation_data[1]
         targ = targ_all[:,1]
 
+        print('Epoch %d' % epoch)
+
         ap = sklm.average_precision_score(targ_all, score)
         self.ap.append(ap)
         print('Average Precision : %s' % ap)

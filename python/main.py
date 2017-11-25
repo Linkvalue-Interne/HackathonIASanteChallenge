@@ -52,7 +52,7 @@ def train(model_final, config, model_section):
         write_graph=True, write_images=True)
 
     # Save the model according to the conditions
-    file_name = models_dir + '/' + model_section + "_-{epoch:02d}-{ap:.2f}.h5"
+    file_name = models_dir + '/' + model_section + "_-{epoch:02d}-{val_loss:.2f}.h5"
     checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=1)
     # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
     metrics = custom_metrics.Metrics()
