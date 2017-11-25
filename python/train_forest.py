@@ -193,11 +193,9 @@ def get_metadata_model(config, model_section):
 
 if __name__ == "__main__":
 
-    mode = sys.argv[1]
-    if len(sys.argv)>2:
-        model_section = sys.argv[2].split(',')
-        if len(sys.argv)>3:
-            weights_file = sys.argv[3].split(',')
+    model_section = sys.argv[1].split(',')
+        if len(sys.argv)>2:
+            weights_file = sys.argv[2].split(',')
         else:
             weights_file = None
     else:
@@ -222,11 +220,5 @@ if __name__ == "__main__":
                 #custom_metrics.average_precision_at_k
             ])
 
-    if mode == 'train':
-        train(models, config, model_section)
-    elif mode == 'predict':
-        predict(models, config, model_section)
-    elif mode == 'evaluate':
-        evaluate(models, config)
-    else:
-        print('unknown mode.')
+    bst = train(models, config, model_section)
+    predict(models, config, model_section, bst)
