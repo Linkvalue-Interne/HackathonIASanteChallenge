@@ -61,8 +61,12 @@ def read_image(img, path='' ,target_size=(224,224)):
     x = x.astype('float32') / 255.
     return x
 
-def load_set(path, target_size=(224,224), sample=None, shift = 0, shuffle=True, return_img_name=False):
-    labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+def load_set(path, target_size=(224,224), data_aug_range=None, shuffle=True, return_img_name=False):
+    if data_aug_range is not None:
+        labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d)) \
+            and int(d.split('_')[-1].split('.')[0]) is in data_aug_range]
+    else:
+        labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     labels.sort()
     
     labels_map = {}
@@ -76,10 +80,6 @@ def load_set(path, target_size=(224,224), sample=None, shift = 0, shuffle=True, 
             all_images.append((label, image))
     if shuffle:
         random.shuffle(all_images)
-    if sample is not None:
-        L = int(sample*len(all_images))
-    else:
-        L = len(all_images)
     print('Reading %s images' % L)
     # L = 5000
     X = np.zeros((L, target_size[0], target_size[1], 3))
