@@ -80,13 +80,14 @@ def load_set(path, target_size=(224,224), data_aug_range=None, shuffle=True, ret
             all_images.append((label, image))
     if shuffle:
         random.shuffle(all_images)
-    print('Reading %s images' % L)
+    L = len(all_images)
     # L = 5000
+    print('Reading %s images' % L)
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
     st = time.time()
     pool = Pool(12)
-    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[shift:L])
+    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[:L])
     pool.close() #we are not adding any more processes
     pool.join()
     print('Images loaded in memory in %s sec' % (int(time.time()-st)))
