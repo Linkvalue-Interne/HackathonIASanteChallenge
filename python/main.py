@@ -69,7 +69,7 @@ def train(model_final, config, model_section):
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [
             tbCallBack,
-            #checkpoint,
+            checkpoint,
             #early
             ])
 
