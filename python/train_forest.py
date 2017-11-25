@@ -27,6 +27,7 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import xgboost as xgb
+import functools as ft
 
 class ModelParams :
     def __init__(self, model_section):
@@ -43,8 +44,6 @@ def get_available_gpus():
     local_device_protos = device_lib.list_local_devices()
     return len([x for x in local_device_protos if x.device_type == 'GPU'])
 
-def features_extraction(models, config, model_section):
-
 
 def train(models, config, model_section):
     models_param = []
@@ -52,13 +51,17 @@ def train(models, config, model_section):
     for ms in model_section :
         mp = ModelParams(ms)
         mp.get_metadata(config)
-        models_param += mp
+        models_param.append(mp)
 
     #Read Basic Metadata from config file
     train_data_dir, validation_data_dir, test_data_dir,\
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
+
+    img_height = 256
+    img_width = 256
+    
     X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width), data_aug_range=[1,3,5,7])
 
     X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
@@ -69,26 +72,29 @@ def train(models, config, model_section):
     cnn_outputs_val = []
 
     for model,mp in zip(models, models_param): 
-        cnn_outputs_train += model.predict(
+        cnn_outputs_train.append(model.predict(
             X_train,
             batch_size=mp.batch_size,
             verbose=1
-        )
-        cnn_outputs_val += model.predict(
+        ))
+        cnn_outputs_val.append(model.predict(
             X_val,
             batch_size=mp.batch_size,
             verbose=1
-        )
+        ))
 
-    forest_input_train = reduce(lambda x,y : x + y, map(lambda x : 0.5*x,
+    np.save("/sharedfiles/outputs/features/cnn_features_train",cnn_outputs_train)
+    np.save("/sharedfiles/outputs/features/cnn_features_val",cnn_outputs_val)
+
+    forest_input_train = ft.reduce(lambda x,y : x + y, map(lambda x : 0.5*x,
                                                         cnn_outputs_train))
-    forest_input_val = reduce(lambda x,y : x + y, map(lambda x : 0.5*x,
+    forest_input_val = ft.reduce(lambda x,y : x + y, map(lambda x : 0.5*x,
                                                         cnn_outputs_val))
     
     xgb_train = xgb.DMatrix(forest_input_train, Y_train)
-    xgb_val = xbg.DMatrix(forest_input_val, Y_val)
+    xgb_val = xgb.DMatrix(forest_input_val, Y_val)
 
-    param = {'max_depth' : 3, 'eta' : 0.1, 'objective' : 'binary:logistic',
+    param = {'max_depth' : 10, 'eta' : 0.1, 'objective' : 'binary:logistic',
              'seed' : 42}
     num_round = 50
     bst = xgb.train(param, xgb_train, num_round, [(xgb_val, 'val'), (xgb_train, 'train')])
@@ -103,7 +109,7 @@ def predict(models, config, model_section, bst):
     for ms in model_section :
         mp = ModelParams(ms)
         mp.get_metadata(config)
-        models_param += mp
+        models_para.append(mp)
 
     #Read Basic Metadata from config file
     train_data_dir, validation_data_dir, test_data_dir,\
@@ -117,13 +123,15 @@ def predict(models, config, model_section, bst):
     cnn_outputs_tes = []
 
     for model,mp in zip(models, models_param): 
-        cnn_outputs_test += model.predict(
+        cnn_outputs_test.append(model.predict(
             X_test,
             batch_size=mp.batch_size,
             verbose=1
-        )
+        ))
 
-    forest_input_test = reduce(lambda x,y : x + y, map(lambda x : 0.5*x,cnn_outputs_test))
+    
+    np.save("/sharedfiles/outputs/features/cnn_features_test",cnn_outputs_test)
+    forest_input_test = ft.reduce(lambda x,y : x + y, map(lambda x : 0.5*x,cnn_outputs_test))
     xgb_test = xgb.DMatrix(forest_input_test)
 
     predictions = bst.predict_proba(xgb_test)
@@ -149,7 +157,7 @@ def load_models(config, model_section=None, weights_file=None):
     for ms in model_section :
         mp = ModelParams(ms)
         mp.get_metadata(config)
-        models_param += mp
+        models_param.append(mp)
 
     for mp,wf in zip(models_param, weights_file) :
         model = pretrained_models.model_definition(mp.model_name,
@@ -161,17 +169,18 @@ def load_models(config, model_section=None, weights_file=None):
         x = Dense(1024, activation="relu",
                 kernel_regularizer=regularizers.l2(0.01)
             )(x)
-        # x = Dropout(0.5)(x)
-        # x = Dense(1024, activation="relu",
-        #     kernel_regularizer=regularizers.l2(0.01)
-        #     )(x)
+        x = Dropout(0.5)(x)
+        x = Dense(1024, activation="relu",name="abdul",
+             kernel_regularizer=regularizers.l2(0.01)
+             )(x)
         predictions = Dense(2, activation="softmax")(x)
 
-        # creating the final model
-        model_final = Model(input = model.input, output = x)
-        model_final.load_weights(wf)
 
-        models += model_final
+        # creating the final model
+        model_final = Model(input = model.input, output = predictions)
+        intermediate_layer_model = Model(inputs=model.input, outputs=model_final.get_layer("abdul").output)
+
+        models.append(intermediate_layer_model)
 
     return models
 
@@ -194,13 +203,7 @@ def get_metadata_model(config, model_section):
 if __name__ == "__main__":
 
     model_section = sys.argv[1].split(',')
-        if len(sys.argv)>2:
-            weights_file = sys.argv[2].split(',')
-        else:
-            weights_file = None
-    else:
-        model_section = 'default'
-        weights_file = None
+    weights_file = sys.argv[2].split(',')
 
     # Load configs
     config = configparser.ConfigParser()
