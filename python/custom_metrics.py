@@ -54,9 +54,9 @@ class Metrics(keras.callbacks.Callback):
         self.auc.append(auc)
         print('AUC : %s' % auc)
 
-        conf = sklm.confusion_matrix(targ, predict)
-        self.confusion.append(conf)
-        print('Confusion Matrix : %s' % conf)
+        # conf = sklm.confusion_matrix(targ, predict)
+        # self.confusion.append(conf)
+        # print('Confusion Matrix : %s' % conf)
 
         precision = sklm.precision_score(targ, predict)
         self.precision.append(precision)
@@ -64,10 +64,10 @@ class Metrics(keras.callbacks.Callback):
         
         recall = sklm.recall_score(targ, predict)
         self.recall.append(precision)
-        print('Confusion Matrix : %s' % recall)
+        print('Recall : %s' % recall)
         
-        f1s = sklm.f1_score(targ, predict)
-        self.f1s.append(f1s)
-        print('F1 : %s' % f1s)
+        # f1s = sklm.f1_score(targ, predict)
+        # self.f1s.append(f1s)
+        # print('F1 : %s' % f1s)
 
         return

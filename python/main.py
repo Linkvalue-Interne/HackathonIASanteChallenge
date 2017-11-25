@@ -53,7 +53,7 @@ def train(model_final, config, model_section):
 
     # Save the model according to the conditions
     file_name = models_dir + '/' + model_section + ".h5"
-    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=1)
     # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
     metrics = custom_metrics.Metrics()
 
