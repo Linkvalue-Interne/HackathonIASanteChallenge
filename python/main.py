@@ -97,7 +97,7 @@ def evaluate(model_final, config):
     print('Evaluation done.')
 
 
-def predict(model_final, config, model_file_name):
+def predict(model_final, config, model_file_name, h5_file):
 
     img_width, img_height,\
     batch_size, epochs, \
@@ -117,8 +117,11 @@ def predict(model_final, config, model_file_name):
     )
     print('Prediction done.')
     print(predictions[:10])
+    weights_name = h5_file.split('/')[-1].split('.')[0]
+    test_name = test_data_dir.split('/')[-1]
     preds = pd.DataFrame({'name' : return_img_names, 'risk' : predictions[:,1]})
-    preds.to_csv('%s/%s_%d.csv' % (results_dir, model_file_name, int(time.time())), index=False)
+    csv_name = 'predict_on_dir-%s_with-%s' % (test_name, weights_name)
+    preds.to_csv('%s/csv_name.csv' % results_dir, index=False)
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
@@ -207,7 +210,7 @@ if __name__ == "__main__":
     if mode == 'train':
         train(model_final, config, model_section)
     elif mode == 'predict':
-        predict(model_final, config, model_section)
+        predict(model_final, config, model_section, weights_file)
     elif mode == 'evaluate':
         evaluate(model_final, config)
     else:
