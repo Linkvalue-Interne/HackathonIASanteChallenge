@@ -116,12 +116,12 @@ def predict(model_final, config, model_file_name, h5_file):
         verbose=1
     )
     print('Prediction done.')
-    print(predictions[:10])
     weights_name = h5_file.split('/')[-1].split('.')[0]
     test_name = test_data_dir.split('/')[-1]
     preds = pd.DataFrame({'name' : return_img_names, 'risk' : predictions[:,1]})
-    csv_name = 'predict_on_dir-%s_with-%s' % (test_name, weights_name)
-    preds.to_csv('%s/csv_name.csv' % results_dir, index=False)
+    csv_name = '%s/predict_on_dir-%s_with-%s.csv' % (results_dir, test_name, weights_name)
+    print('Writing to csv file %s' % csv_name)
+    preds.to_csv(csv_name, index=False)
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
