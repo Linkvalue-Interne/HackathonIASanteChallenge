@@ -200,7 +200,6 @@ if __name__ == "__main__":
             custom_metrics.precision,
             custom_metrics.recall,
             #custom_metrics.average_precision_at_k
-            "f1-score"
         ])
 
     if mode == 'train':
