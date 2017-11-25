@@ -25,4 +25,4 @@ def average_precision_at_k(y_true, y_pred):
     '''Calculates the recall, a metric for multi-label classification of
     how many relevant items are selected.
     '''
-    return tf.metrics.sparse_average_precision_at_k(y_true, y_pred, 64)
+    return tf.metrics.sparse_average_precision_at_k(y_true, y_pred, 2)
