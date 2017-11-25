@@ -32,7 +32,6 @@ def average_precision_at_k(y_true, y_pred):
 
 class Metrics(keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
-        self.confusion = []
         self.precision = []
         self.recall = []
         self.f1s = []
@@ -41,7 +40,7 @@ class Metrics(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         score = np.asarray(self.model.predict(self.validation_data[0]))
-        predict = np.round(np.asarray(self.model.predict(self.validation_data[0])))
+        predict = np.round(np.asarray(self.model.predict(self.validation_data[0])))[:,1]
         targ = self.validation_data[1]
 
         self.auc.append(sklm.roc_auc_score(targ, score))
