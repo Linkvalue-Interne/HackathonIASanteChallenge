@@ -1,4 +1,4 @@
-from keras import applications
+from keras import applications, regularizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.models import Sequential, Model
@@ -42,7 +42,7 @@ def train(model_final, config, model_section):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
-    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
+    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width), data_aug_range=[0,2,4])
 
     X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
@@ -137,9 +137,13 @@ def load_model(config, model_section=None, weights_file=None):
     #Adding custom Layers
     x = model.output
     x = Flatten()(x)
-    x = Dense(1024, activation="relu")(x)
+    x = Dense(1024, activation="relu",
+            kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     x = Dropout(0.5)(x)
-    x = Dense(1024, activation="relu")(x)
+    x = Dense(1024, activation="relu",
+        kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     predictions = Dense(2, activation="softmax")(x)
 
     # creating the final model
@@ -188,8 +192,13 @@ if __name__ == "__main__":
     # Load model
     model_raw = load_model(config, model_section=model_section, weights_file=weights_file)
     model_final = make_parallel(model_raw, gpuNumber)
-    # compile the model
-    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics = ["accuracy", custom_metrics.precision, custom_metrics.recall])
+    # compile the model 
+    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9),
+        metrics=["accuracy",
+            custom_metrics.precision,
+            custom_metrics.recall,
+            custom_metrics.average_precision_at_k
+        ])
 
     if mode == 'train':
         train(model_final, config, model_section)
