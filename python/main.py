@@ -33,7 +33,6 @@ def get_available_gpus():
 
 
 def train(model_final, config, model_section):
-
     img_width, img_height,\
     batch_size, epochs, \
     training_steps_per_epoch, validation_steps_per_epoch,\
@@ -71,9 +70,12 @@ def train(model_final, config, model_section):
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [
             tbCallBack,
-            checkpoint,
-            # early
+            #checkpoint,
+            #early
             ])
+
+    model_simple.set_weights(model_final.get_weights())
+    model_simple.save(file_name)
 
 def evaluate(model_final, config):
 
@@ -191,13 +193,15 @@ if __name__ == "__main__":
 
     # Load model
     with tf.device('/cpu:0'):
-        model_final = load_model(config, model_section=model_section, weights_file=weights_file)
+        model_simple = load_model(config, model_section=model_section, weights_file=weights_file)
 
     if (number_gpus > 1):
-        model_final = multi_gpu_model(model_final, gpus=number_gpus)
+        model_final = multi_gpu_model(model_simple, gpus=number_gpus)
+    else :
+        model_final = model_simple
 
     # compile the model
-    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
+    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics = ["accuracy", custom_metrics.precision, custom_metrics.recall])
 
     if mode == 'train':
         train(model_final, config, model_section)
