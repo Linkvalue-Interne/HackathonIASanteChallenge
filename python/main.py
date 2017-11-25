@@ -191,9 +191,11 @@ if __name__ == "__main__":
 
     # Get numbers of available gpus
     gpuNumber = get_available_gpus()
+    print('GPU Number available : %d' % gpuNumber)
     # Load model
-    model_raw = load_model(config, model_section=model_section, weights_file=weights_file)
-    model_final = make_parallel(model_raw, gpuNumber)
+    model_final = load_model(config, model_section=model_section, weights_file=weights_file)
+    if gpuNumber>1:
+        model_final = make_parallel(model_final, gpuNumber)
     # compile the model 
     model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9),
         metrics=["accuracy",
