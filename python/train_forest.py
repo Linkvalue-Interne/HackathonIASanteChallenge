@@ -10,6 +10,8 @@ from keras.utils.training_utils import multi_gpu_model
 import pretrained_models, custom_metrics
 from make_parallel import make_parallel
 
+from sklearn.metrics import average_precision_score, precision_score, recall_score, accuracy_score, roc_auc_score
+
 from generators import generate_arrays_from_bottleneck_folder, load_set
 
 try:
@@ -26,8 +28,11 @@ import pandas as pd
 
 import tensorflow as tf
 from tensorflow.python.client import device_lib
-import xgboost as xgb
+#import xgboost as xgb
+from xgboost import XGBClassifier
 import functools as ft
+
+xgb = XGBClassifier()
 
 class ModelParams :
     def __init__(self, model_section):
@@ -91,20 +96,28 @@ def train(models, config, model_section):
     forest_input_val = ft.reduce(lambda x,y : x + y, map(lambda x : 0.5*x,
                                                         cnn_outputs_val))
     
-    xgb_train = xgb.DMatrix(forest_input_train, Y_train)
-    xgb_val = xgb.DMatrix(forest_input_val, Y_val)
+    #xgb_train = xgb.DMatrix(forest_input_train, Y_train)
+    #xgb_val = xgb.DMatrix(forest_input_val, Y_val)
 
-    param = {'max_depth' : 10, 'eta' : 0.1, 'objective' : 'binary:logistic',
-             'seed' : 42}
+    param = {'max_depth' : 10, 'learning_rate' : 0.1, 
+             'n_estimators' : 100, 'objective' : 'binary:logistic',
+             'random_state' : 42}
+    xgb = XGBClassifier(**param)
     num_round = 50
-    bst = xgb.train(param, xgb_train, num_round, [(xgb_val, 'val'), (xgb_train, 'train')])
-
-    return bst
+    print('Fitting XGBi with params %s' % param)
+    xgb.fit(forest_input_train, Y_train[:,1])
+    y_pp = xgb.predict_proba(forest_input_val)[:,1]
+    y_p = xgb.predict(forest_input_val)
+    for func in [precision_score, recall_score, accuracy_score]:
+        print(func, func(Y_val[:,1], y_p))
+    for func in [average_precision_score, roc_auc_score]:
+        print(func, func(Y_val[:,1], y_pp))
+    return xgb
 
 
 def predict(models, config, model_section, bst):
 
-    models_param = []
+    models_para = []
 
     for ms in model_section :
         mp = ModelParams(ms)
@@ -116,31 +129,35 @@ def predict(models, config, model_section, bst):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
+    img_height = 256
+    img_width = 256
+
     X_test, _, return_img_names = load_set(test_data_dir, target_size=(img_height, img_width), shuffle=False, return_img_name=True)
 
     metrics = custom_metrics.Metrics()
 
-    cnn_outputs_tes = []
+    cnn_outputs_test = []
 
-    for model,mp in zip(models, models_param): 
+    for model,mp in zip(models, models_para): 
         cnn_outputs_test.append(model.predict(
             X_test,
             batch_size=mp.batch_size,
             verbose=1
         ))
 
+    print(len(cnn_outputs_test))
     
     np.save("/sharedfiles/outputs/features/cnn_features_test",cnn_outputs_test)
     forest_input_test = ft.reduce(lambda x,y : x + y, map(lambda x : 0.5*x,cnn_outputs_test))
-    xgb_test = xgb.DMatrix(forest_input_test)
+    #xgb_test = xgb.DMatrix(forest_input_test)
 
-    predictions = bst.predict_proba(xgb_test)
+    predictions = bst.predict_proba(forest_input_test)
     
     
     print('Prediction done.')
     print(predictions[:10])
     preds = pd.DataFrame({'name' : return_img_names, 'risk' : predictions[:,1]})
-    preds.to_csv('%s/%s_%d.csv' % (results_dir, model_file_name, int(time.time())), index=False)
+    preds.to_csv('xgboost.csv')
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
