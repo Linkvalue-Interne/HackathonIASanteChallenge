@@ -42,7 +42,7 @@ def train(model_final, config, model_section):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
-    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width), data_aug_range=[0,2,4])
+    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width), data_aug_range=[1,3,5,7])
 
     X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
@@ -52,9 +52,10 @@ def train(model_final, config, model_section):
         write_graph=True, write_images=True)
 
     # Save the model according to the conditions
-    file_name = models_dir + '/' + model_section + ".h5"
-    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    file_name = models_dir + '/' + model_section + "_-{epoch:02d}-{val_loss:.2f}.h5"
+    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=10)
     # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+    metrics = custom_metrics.Metrics()
 
     # Train the model
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
@@ -68,6 +69,7 @@ def train(model_final, config, model_section):
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [
+            metrics,
             tbCallBack,
             checkpoint,
             #early
@@ -140,10 +142,10 @@ def load_model(config, model_section=None, weights_file=None):
     x = Dense(1024, activation="relu",
             kernel_regularizer=regularizers.l2(0.01)
         )(x)
-    x = Dropout(0.5)(x)
-    x = Dense(1024, activation="relu",
-        kernel_regularizer=regularizers.l2(0.01)
-        )(x)
+    # x = Dropout(0.5)(x)
+    # x = Dense(1024, activation="relu",
+    #     kernel_regularizer=regularizers.l2(0.01)
+    #     )(x)
     predictions = Dense(2, activation="softmax")(x)
 
     # creating the final model
@@ -197,7 +199,7 @@ if __name__ == "__main__":
         metrics=["accuracy",
             custom_metrics.precision,
             custom_metrics.recall,
-            custom_metrics.average_precision_at_k
+            #custom_metrics.average_precision_at_k
         ])
 
     if mode == 'train':

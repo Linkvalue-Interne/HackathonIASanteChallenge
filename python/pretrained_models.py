@@ -21,7 +21,7 @@ def resnet50(input_shape) :
 
 
 def freezeFeaturesLearning(model):
-    for layer in model.layers[:-1]:
+    for layer in model.layers[:-2]:
         layer.trainable = False
 
     return model
