@@ -55,6 +55,7 @@ def train(model_final, config, model_section):
     file_name = models_dir + '/' + model_section + ".h5"
     checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
     # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+    metrics = custom_metrics.Metrics()
 
     # Train the model
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
@@ -68,6 +69,7 @@ def train(model_final, config, model_section):
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
         callbacks = [
+            metrics,
             tbCallBack,
             checkpoint,
             #early
@@ -197,7 +199,8 @@ if __name__ == "__main__":
         metrics=["accuracy",
             custom_metrics.precision,
             custom_metrics.recall,
-            custom_metrics.average_precision_at_k
+            #custom_metrics.average_precision_at_k
+            "f1-score"
         ])
 
     if mode == 'train':
