@@ -192,8 +192,13 @@ if __name__ == "__main__":
     # Load model
     model_raw = load_model(config, model_section=model_section, weights_file=weights_file)
     model_final = make_parallel(model_raw, gpuNumber)
-    # compile the model
-    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics = ["accuracy", custom_metrics.precision, custom_metrics.recall])
+    # compile the model 
+    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9),
+        metrics=["accuracy",
+            custom_metrics.precision,
+            custom_metrics.recall,
+            custom_metrics.average_precision_at_k
+        ])
 
     if mode == 'train':
         train(model_final, config, model_section)

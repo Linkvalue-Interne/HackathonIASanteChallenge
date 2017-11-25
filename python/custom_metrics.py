@@ -1,5 +1,6 @@
 import numpy as np
 from keras import backend as K
+import tensorflow as tf
 
 def precision(y_true, y_pred):
     '''Calculates the precision, a metric for multi-label classification of
@@ -19,3 +20,9 @@ def recall(y_true, y_pred):
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
+
+def average_precision_at_k(y_true, y_pred):
+    '''Calculates the recall, a metric for multi-label classification of
+    how many relevant items are selected.
+    '''
+    return tf.metrics.sparse_average_precision_at_k(y_true, y_pred, 64)
