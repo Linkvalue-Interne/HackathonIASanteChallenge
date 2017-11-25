@@ -61,7 +61,7 @@ def read_image(img, path='' ,target_size=(224,224)):
     x = x.astype('float32') / 255.
     return x
 
-def load_set(path, target_size=(224,224), shuffle=True, return_img_name=False):
+def load_set(path, target_size=(224,224), sample=None, shift = 0, shuffle=True, return_img_name=False):
     labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     labels.sort()
     
@@ -76,14 +76,17 @@ def load_set(path, target_size=(224,224), shuffle=True, return_img_name=False):
             all_images.append((label, image))
     if shuffle:
         random.shuffle(all_images)
-    L = len(all_images)
+    if sample is not None:
+        L = int(sample*len(all_images))
+    else:
+        L = len(all_images)
     print('Reading %s images' % L)
     # L = 5000
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
     st = time.time()
     pool = Pool(12)
-    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[:L])
+    X_list = pool.map(partial(read_image, target_size=target_size, path=path), all_images[shift:L])
     pool.close() #we are not adding any more processes
     pool.join()
     print('Images loaded in memory in %s sec' % (int(time.time()-st)))
