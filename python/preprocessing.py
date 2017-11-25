@@ -67,10 +67,13 @@ def process_folder(fname):
         im_rescaled = rescale(im, ratio)
         index = np.argmax(im_rescaled.shape)
         crop_size = int(float(im_rescaled.shape[index] - size)/2.0)
-        if index == 0 :
-            im_crop = im_rescaled[crop_size:-crop_size,:,:]
+        if(crop_size > 0 ):
+            if(index == 0):
+                im_crop = im_rescaled[crop_size:-crop_size,:,:]
+            else :
+                im_crop = im_rescaled[:,crop_size:-crop_size,:]
         else :
-            im_crop = im_rescaled[:,crop_size:-crop_size,:]
+            im_crop = im_rescaled
         
         return resize(im_crop, (size,size,d))
 
@@ -94,12 +97,10 @@ def process_folder(fname):
     )
     label = raw_seg(im)
     mask = find_bbox(label, im)
-    mask_augmented = geometrical_augmentation(mask)
-    for i,m in enumerate(mask_augmented): 
-        io.imsave(
-            args.output_folder + "/" + fname + "_" + str(i) +"." + ext,
-            resize(m,(args.im_size, args.im_size,3))
-        )
+    #mask_augmented = geometrical_augmentation(mask)
+    #for i,m in enumerate(mask_augmented): 
+    io.imsave(args.output_folder + "/" + fname  +"." + ext,
+              resize(mask,(args.im_size, args.im_size,3)))
 
 pool = Pool(args.pool_size)
 if not path.exists(args.output_folder):
