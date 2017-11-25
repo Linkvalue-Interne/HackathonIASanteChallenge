@@ -42,7 +42,7 @@ def train(model_final, config, model_section):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
-    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
+    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width), shuffle=False, sample=0.5)
 
     X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
