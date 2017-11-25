@@ -142,10 +142,10 @@ def load_model(config, model_section=None, weights_file=None):
     x = Dense(1024, activation="relu",
             kernel_regularizer=regularizers.l2(0.01)
         )(x)
-    x = Dropout(0.5)(x)
-    x = Dense(1024, activation="relu",
-        kernel_regularizer=regularizers.l2(0.01)
-        )(x)
+    # x = Dropout(0.5)(x)
+    # x = Dense(1024, activation="relu",
+    #     kernel_regularizer=regularizers.l2(0.01)
+    #     )(x)
     predictions = Dense(2, activation="softmax")(x)
 
     # creating the final model
