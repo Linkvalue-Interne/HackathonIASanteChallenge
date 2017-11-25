@@ -38,22 +38,36 @@ class Metrics(keras.callbacks.Callback):
         self.f1s = []
         self.kappa = []
         self.auc = []
+        self.ap = []
 
     def on_epoch_end(self, epoch, logs={}):
         score = np.asarray(self.model.predict(self.validation_data[0]))
         predict = np.round(np.asarray(self.model.predict(self.validation_data[0])))[:,1]
         targ_all = self.validation_data[1]
         targ = targ_all[:,1]
-        print(targ_all.shape)
-        print(targ.shape)
-        print(predict.shape)
-        print(score.shape)
 
-        self.auc.append(sklm.roc_auc_score(targ_all, score))
-        #self.confusion.append(sklm.confusion_matrix(targ, predict))
-        self.precision.append(sklm.precision_score(targ, predict))
-        self.recall.append(sklm.recall_score(targ, predict))
-        self.f1s.append(sklm.f1_score(targ, predict))
-        self.kappa.append(sklm.cohen_kappa_score(targ, predict))
+        ap = sklm.average_precision_score(targ_all, score)
+        self.ap.append(ap)
+        print('Average Precision : %s' % ap)
+
+        auc = sklm.roc_auc_score(targ_all, score)
+        self.auc.append(auc)
+        print('AUC : %s' % auc)
+
+        conf = sklm.confusion_matrix(targ, predict)
+        self.confusion.append(conf)
+        print('Confusion Matrix : %s' % conf)
+
+        precision = sklm.precision_score(targ, predict)
+        self.precision.append(precision)
+        print('Precision : %s' % precision)
+        
+        recall = sklm.recall_score(targ, predict)
+        self.recall.append(precision)
+        print('Confusion Matrix : %s' % recall)
+        
+        f1s = sklm.f1_score(targ, predict)
+        self.f1s.append(f1s)
+        print('F1 : %s' % f1s)
 
         return
