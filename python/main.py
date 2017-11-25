@@ -53,7 +53,7 @@ def train(model_final, config, model_section):
 
     # Save the model according to the conditions
     file_name = models_dir + '/' + model_section + "_-{epoch:02d}-{val_loss:.2f}.h5"
-    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=10)
+    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=4)
     # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
     metrics = custom_metrics.Metrics()
 
@@ -142,10 +142,10 @@ def load_model(config, model_section=None, weights_file=None):
     x = Dense(1024, activation="relu",
             kernel_regularizer=regularizers.l2(0.01)
         )(x)
-    # x = Dropout(0.5)(x)
-    # x = Dense(1024, activation="relu",
-    #     kernel_regularizer=regularizers.l2(0.01)
-    #     )(x)
+    x = Dropout(0.5)(x)
+    x = Dense(1024, activation="relu",
+            kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     predictions = Dense(2, activation="softmax")(x)
 
     # creating the final model
