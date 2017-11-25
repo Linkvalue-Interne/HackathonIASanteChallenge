@@ -126,7 +126,7 @@ def predict(models, config, model_section, bst):
     forest_input_test = reduce(lambda x,y : x + y, map(lambda x : 0.5*x,cnn_outputs_test))
     xgb_test = xgb.DMatrix(forest_input_test)
 
-    predictions = bst.predict(xgb_test)
+    predictions = bst.predict_proba(xgb_test)
     
     
     print('Prediction done.')
