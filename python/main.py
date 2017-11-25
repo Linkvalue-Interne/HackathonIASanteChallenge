@@ -8,6 +8,7 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard,
 from keras.utils.training_utils import multi_gpu_model
 
 import pretrained_models, custom_metrics
+from make_parallel import make_parallel
 
 from generators import generate_arrays_from_bottleneck_folder, load_set
 
@@ -24,6 +25,11 @@ import numpy as np
 import pandas as pd
 
 import tensorflow as tf
+from tensorflow.python.client import device_lib
+
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return len([x for x in local_device_protos if x.device_type == 'GPU'])
 
 def train(model_final, config, model_section):
     img_width, img_height,\
@@ -163,11 +169,10 @@ def get_metadata_model(config, model_section):
 if __name__ == "__main__":
 
     mode = sys.argv[1]
-    gpuId = sys.argv[2]
-    if len(sys.argv)>3:
-        model_section = sys.argv[3]
-        if len(sys.argv)>4:
-            weights_file = sys.argv[4]
+    if len(sys.argv)>2:
+        model_section = sys.argv[2]
+        if len(sys.argv)>3:
+            weights_file = sys.argv[3]
         else:
             weights_file = None
     else:
@@ -178,10 +183,11 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('config.ini')
 
+    # Get numbers of available gpus
+    gpuNumber = get_available_gpus()
     # Load model
-    os.environ["CUDA_VISIBLE_DEVICES"]=str(gpuId)
-    with tf.device('/gpu:%s' % gpuId):
-        model_final = load_model(config, model_section=model_section, weights_file=weights_file)
+    model_raw = load_model(config, model_section=model_section, weights_file=weights_file)
+    model_final = make_parallel(model_raw, gpuNumber)
     # compile the model
     model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics = ["accuracy", custom_metrics.precision, custom_metrics.recall])
 
@@ -193,4 +199,3 @@ if __name__ == "__main__":
         evaluate(model_final, config)
     else:
         print('unknown mode.')
-
