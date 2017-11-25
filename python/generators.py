@@ -62,11 +62,7 @@ def read_image(img, path='' ,target_size=(224,224)):
     return x
 
 def load_set(path, target_size=(224,224), data_aug_range=None, shuffle=True, return_img_name=False):
-    if data_aug_range is not None:
-        labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d)) \
-            and int(d.split('_')[-1].split('.')[0]) in data_aug_range]
-    else:
-        labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+    labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     labels.sort()
     
     labels_map = {}
@@ -75,7 +71,11 @@ def load_set(path, target_size=(224,224), data_aug_range=None, shuffle=True, ret
     all_images = []
     
     for i, label in enumerate(labels):
-        images = [str(a) for a in os.listdir(os.path.join(path, label))]
+        if data_aug_range is not None:
+            images = [str(a) for a in os.listdir(os.path.join(path, label)) \
+                if int(a.split('_')[-1].split('.')[0]) in data_aug_range]
+        else:
+            images = [str(a) for a in os.listdir(os.path.join(path, label))]
         for image in images:
             all_images.append((label, image))
     if shuffle:
