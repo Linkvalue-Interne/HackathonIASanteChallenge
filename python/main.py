@@ -130,7 +130,7 @@ def load_data(config):
     x = np.array([np.array(Image.open(fname)) for fname in filelist])
 
 
-def load_model(config, model_section=None, weights_file=None):
+def load_model(config, model_section=None, weights_file=None, number_gpus=1):
 
     img_width, img_height,\
     batch_size, epochs, \
@@ -153,6 +153,8 @@ def load_model(config, model_section=None, weights_file=None):
 
     # creating the final model
     model_final = Model(input = model.input, output = predictions)
+    if (number_gpus > 1):
+        model_final = multi_gpu_model(model, gpus=number_gpus)
 
     if weights_file is not None:
         model_final.load_weights(weights_file)
@@ -187,6 +189,9 @@ if __name__ == "__main__":
     else:
         model_section = 'default'
         weights_file = None
+
+    # Get number of GPUs
+    gpus = get_available_gpus()
 
     # Load configs
     config = configparser.ConfigParser()
