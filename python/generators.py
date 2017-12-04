@@ -27,7 +27,7 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
     
     labels_map = {}
     for i, label in enumerate(labels):
-        labels_map[label] = float(i)
+        labels_map[label] = i
     all_images = []
     
     for i, label in enumerate(labels):
@@ -44,18 +44,10 @@ def generate_arrays_from_bottleneck_folder(path, batch_size=32, target_size=(224
             label = entry[0]
             image = entry[1]
             
-            x = imread(os.path.join(path, label, image),
-                # flatten=True, mode='RGB'
-                )
-            # print(x.size)
-            # if x.size != (target_size[0], target_size[1],3):
-            #     resample = pil_image.NEAREST
-            #     x = x.resize((target_size[0], target_size[1],3), resample)
+            x = imread(os.path.join(path, label, image))
             x = scipy.misc.imresize(x, target_size)
-            # x = np.expand_dims(x, axis=2)
             x = x.astype('float32') / 255.
             X[i] = x
-#            X[i] = x[:target_size[0], :target_size[1], 3]
             Y[i] = labels_map[label]
 
         yield (X, Y)
@@ -69,7 +61,7 @@ def read_image(img, path='' ,target_size=(224,224)):
     x = x.astype('float32') / 255.
     return x
 
-def load_set(path, target_size=(224,224)):
+def load_set(path, target_size=(224,224), data_aug_range=None, shuffle=True, return_img_name=False):
     labels = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     labels.sort()
     
@@ -79,12 +71,18 @@ def load_set(path, target_size=(224,224)):
     all_images = []
     
     for i, label in enumerate(labels):
-        images = [str(a) for a in os.listdir(os.path.join(path, label))]
+        if data_aug_range is not None:
+            images = [str(a) for a in os.listdir(os.path.join(path, label)) \
+                if int(a.split('_')[-1].split('.')[0]) in data_aug_range]
+        else:
+            images = [str(a) for a in os.listdir(os.path.join(path, label))]
         for image in images:
             all_images.append((label, image))
-    random.shuffle(all_images)
+    if shuffle:
+        random.shuffle(all_images)
     L = len(all_images)
     # L = 5000
+    print('Reading %s images' % L)
     X = np.zeros((L, target_size[0], target_size[1], 3))
     Y = np.zeros((L, len(labels)))
     st = time.time()
@@ -95,9 +93,13 @@ def load_set(path, target_size=(224,224)):
     print('Images loaded in memory in %s sec' % (int(time.time()-st)))
     for i, x in enumerate(X_list):
         X[i] = x
-        Y[i] = labels_map[all_images[i][0]]
+        Y[i, labels_map[all_images[i][0]]] = 1.
 
+    if return_img_name:
+        return X, Y, [a[1] for a in all_images[:L]]
     return X, Y
+
+
 # gen = generate_arrays_from_bottleneck_folder('/sharedfiles/challenge_data/data/train', batch_size=32, target_size=(224,224))
 
 # for x, y in gen:

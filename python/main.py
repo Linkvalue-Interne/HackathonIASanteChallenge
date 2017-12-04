@@ -1,5 +1,4 @@
-
-from keras import applications
+from keras import applications, regularizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.models import Sequential, Model
@@ -9,6 +8,7 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard,
 from keras.utils.training_utils import multi_gpu_model
 
 import pretrained_models, custom_metrics
+from make_parallel import make_parallel
 
 from generators import generate_arrays_from_bottleneck_folder, load_set
 
@@ -22,7 +22,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 import os, sys
 import time
 import numpy as np
+import pandas as pd
 
+import tensorflow as tf
 from tensorflow.python.client import device_lib
 
 def get_available_gpus():
@@ -30,7 +32,6 @@ def get_available_gpus():
     return len([x for x in local_device_protos if x.device_type == 'GPU'])
 
 def train(model_final, config, model_section):
-
     img_width, img_height,\
     batch_size, epochs, \
     training_steps_per_epoch, validation_steps_per_epoch,\
@@ -41,34 +42,9 @@ def train(model_final, config, model_section):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
-    # train_datagen = ImageDataGenerator(
-    #     rescale = 1./255,
-    #     horizontal_flip = True,
-    #     fill_mode = "nearest",
-    #     zoom_range = 0.3,
-    #     width_shift_range = 0.3,
-    #     height_shift_range=0.3,
-    #     rotation_range=180)
+    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width), data_aug_range=[1,3,5,7])
 
-    # test_datagen = ImageDataGenerator(
-    #     rescale = 1./255,
-    #     fill_mode = "nearest")
-
-    # train_generator = train_datagen.flow_from_directory(
-    #     train_data_dir,
-    #     target_size = (img_height, img_width),
-    #     batch_size = batch_size,
-    #     class_mode = "categorical")
-
-    # custom_train_generator = generate_arrays_from_bottleneck_folder(train_data_dir,
-    #     batch_size=batch_size, target_size=(img_height, img_width))
-
-    # validation_generator = test_datagen.flow_from_directory(
-    #     validation_data_dir,
-    #     target_size = (img_height, img_width),
-    #     class_mode = "categorical")
-
-    X_train, Y_train = load_set(train_data_dir, target_size=(img_height, img_width))
+    X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
     # prepare the tensorboard
     timestamp = time.time()
@@ -76,31 +52,28 @@ def train(model_final, config, model_section):
         write_graph=True, write_images=True)
 
     # Save the model according to the conditions
-    file_name = models_dir + '/' + model_section + ".h5"
-    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+    file_name = models_dir + '/' + model_section + "_-{epoch:02d}-{val_loss:.2f}.h5"
+    checkpoint = ModelCheckpoint(file_name, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=4)
+    # early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+    metrics = custom_metrics.Metrics()
 
     # Train the model
     print('Training model %s and saving snapshot at %s' %(model_section, file_name))
-    # model_final.fit_generator(
-    #     custom_train_generator,
-    #     steps_per_epoch = training_steps_per_epoch,
-    #     epochs = epochs,
-    #     validation_data = validation_generator,
-    #     validation_steps = validation_steps_per_epoch,
-    #     verbose=1,
-    #     class_weight = {0 : 1., 1 : positive_weight},
-    #     callbacks = [tbCallBack, checkpoint, early])
 
     model_final.fit(
         X_train,
         Y_train,
         batch_size = batch_size,
         epochs = epochs,
-        validation_split = 0.2,
+        validation_data = (X_val, Y_val),
         verbose=1,
         class_weight = {0 : 1., 1 : positive_weight},
-        callbacks = [tbCallBack, checkpoint, early])
+        callbacks = [
+            metrics,
+            tbCallBack,
+            checkpoint,
+            #early
+            ])
 
 def evaluate(model_final, config):
 
@@ -113,25 +86,18 @@ def evaluate(model_final, config):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        fill_mode = "nearest")
+    X_val, Y_val = load_set(validation_data_dir, target_size=(img_height, img_width))
 
-    validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
-        target_size = (img_height, img_width),
-        class_mode = "categorical")
-
-    print(model_final.evaluate_generator(
-        validation_generator,
-        10000,
-        workers=8,
-        use_multiprocessing=False))
+    print(model_final.evaluate(
+        X_val,
+        Y_val,
+        batch_size=batch_size,
+        verbose=1))
 
     print('Evaluation done.')
 
 
-def predict(model_final, config, model_file_name):
+def predict(model_final, config, model_file_name, h5_file):
 
     img_width, img_height,\
     batch_size, epochs, \
@@ -142,25 +108,20 @@ def predict(model_final, config, model_file_name):
     results_dir, models_dir, log_dir = map(lambda x : x[1],
                                             config.items("base"))
 
-    test_datagen = ImageDataGenerator(
-        rescale = 1./255,
-        fill_mode = "nearest")
+    X_test, _, return_img_names = load_set(test_data_dir, target_size=(img_height, img_width), shuffle=False, return_img_name=True)
 
-    validation_generator = test_datagen.flow_from_directory(
-        test_data_dir,
-        target_size = (img_height, img_width),
-        class_mode = "categorical")
-
-    predictions = model_final.predict_generator(
-        validation_generator,
-        10000,
-        verbose=1,
-        workers=8,
-        use_multiprocessing=False)
-
+    predictions = model_final.predict(
+        X_test,
+        batch_size=batch_size,
+        verbose=1
+    )
     print('Prediction done.')
-    print(predictions[:10])
-    np.save(results_dir + '/' + model_file_name, predictions)
+    weights_name = h5_file.split('/')[-1].split('.')[0]
+    test_name = test_data_dir.split('/')[-1]
+    preds = pd.DataFrame({'name' : return_img_names, 'risk' : predictions[:,1]})
+    csv_name = '%s/predict_on_dir-%s_with-%s.csv' % (results_dir, test_name, weights_name)
+    print('Writing to csv file %s' % csv_name)
+    preds.to_csv(csv_name, index=False)
 
 def load_data(config):
     train_data_dir, validation_data_dir, test_data_dir,\
@@ -181,12 +142,16 @@ def load_model(config, model_section=None, weights_file=None, number_gpus=1):
     #Adding custom Layers
     x = model.output
     x = Flatten()(x)
-    x = Dense(256, activation="relu")(x)
+    x = Dense(1024, activation="relu",
+            kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     x = Dropout(0.5)(x)
-    x = Dense(256, activation="relu")(x)
+    x = Dense(1024, activation="relu",
+            kernel_regularizer=regularizers.l2(0.01)
+        )(x)
     predictions = Dense(2, activation="softmax")(x)
 
-    # creating the final model based on number of gpus
+    # creating the final model
     model_final = Model(input = model.input, output = predictions)
     if (number_gpus > 1):
         model_final = multi_gpu_model(model, gpus=number_gpus)
@@ -194,8 +159,6 @@ def load_model(config, model_section=None, weights_file=None, number_gpus=1):
     if weights_file is not None:
         model_final.load_weights(weights_file)
 
-    # compile the model
-    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy", custom_metrics.precision, custom_metrics.recall])
     return model_final
 
 def get_metadata_model(config, model_section):
@@ -234,13 +197,25 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('config.ini')
 
+    # Get numbers of available gpus
+    gpuNumber = get_available_gpus()
+    print('GPU Number available : %d' % gpuNumber)
     # Load model
-    model_final = load_model(config, model_section=model_section, weights_file=weights_file, number_gpus=gpus)
+    model_final = load_model(config, model_section=model_section, weights_file=weights_file)
+    if gpuNumber>1:
+        model_final = make_parallel(model_final, gpuNumber)
+    # compile the model 
+    model_final.compile(loss = "binary_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9),
+        metrics=["accuracy",
+            custom_metrics.precision,
+            custom_metrics.recall,
+            #custom_metrics.average_precision_at_k
+        ])
 
     if mode == 'train':
         train(model_final, config, model_section)
     elif mode == 'predict':
-        predict(model_final, config, model_section)
+        predict(model_final, config, model_section, weights_file)
     elif mode == 'evaluate':
         evaluate(model_final, config)
     else:
