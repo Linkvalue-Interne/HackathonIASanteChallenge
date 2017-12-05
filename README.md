@@ -6,10 +6,12 @@
 
 This repo was made to run with : 
 
-* Python 3.5
-* Keras 2.0
-* Tensorflow 1.0.1
-* 
+* Python 3.5.2
+* Keras 2.0.9
+* Tensorflow 1.4.0
+
+* Cuda 8.0
+* Cudnn 5.1
 
 ## Usage
 
